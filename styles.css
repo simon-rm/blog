@@ -1,0 +1,27 @@
+body, html {
+    height: 100%;
+}
+
+img {
+    display: block;
+    margin: 10px auto;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-width: unset;
+    padding: unset;
+}
+
+main {
+    max-width: 38em;
+    margin: auto;
+    padding: 13px;
+}
+
+footer {
+    text-align: center;
+    background-color: #f0f0f0;
+}
