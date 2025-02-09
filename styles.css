@@ -1,18 +1,18 @@
 body, html {
     height: 100%;
-}
-
-img {
-    display: block;
-    margin: 10px auto;
-}
-
-body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    max-width: unset;
-    padding: unset;
+}
+
+#main-ruby {
+    display: block;
+    margin: 100px auto;
+    width: 30%;
+}
+
+main img {
+    margin: 20px auto;
 }
 
 main {
@@ -23,5 +23,53 @@ main {
 
 footer {
     text-align: center;
-    background-color: #f0f0f0;
+    background-color: #00000033;
+}
+
+nav {
+    padding: 0 20px;
+}
+
+#language-dropdown {
+    img {
+        height: 100%;
+    }
+}
+
+.title {
+    padding-bottom: 20px;
+    border-bottom: white solid 3px;
+}
+
+.articles {
+    a {
+        text-decoration: none;
+        --pico-color: none;
+    }
+    article {
+        height: 300px;
+        overflow: hidden;
+    }
+}
+
+#logo {
+    --pico-color: none;
+}
+
+.d-none {
+    display: none;
+}
+
+nav {
+    position: sticky;
+    top: 0;
+
+    #unselected-language a {
+        padding-left: 50%;
+        padding-right: 50%;
+    }
+
+    summary {
+        display: flex;
+    }
 }

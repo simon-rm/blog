@@ -1,0 +1,103 @@
+<h2>Día 1: Punto de partida</h2>
+
+<p>
+    ¡Bienvenidos a todos! Soy Simon RM, ¡y este es mi primer blog! A partir de hoy, nosotros (y con nosotros me refiero a <em>mí</em>)
+    estaremos construyendo un Creador de Menús + PWA de Entregas (Progressive Web App).
+</p>
+<p>
+    He querido empezar un nuevo proyecto desde hace un tiempo, y me decidí por esta idea porque
+    suena divertida y desafiante =)
+</p>
+<p>
+    En fin, voy a usar la última versión de Ruby on Rails (<strong>8.0.1</strong>) para desarrollarlo.
+    La razón es que he estado trabajando como desarrollador de Rails por poco más de un año desde principios de 2025 y,
+    la segunda razón, ¡es que Rails es increíble! Entonces, ¿empezamos?
+</p>
+
+<p>
+    Hoy, después de decidir la idea, hablé un rato con <code>chatgpt-4o</code> para refinarla
+    un poco más y tratar de entender realmente qué es lo que quiero lograr. El resultado final fue este:
+    “Un creador de menús que te permite hacer pedidos en línea y también gestiona la entrega.”
+    Con eso claro, escribí un plan de acción, un “paso a paso” de cómo construirlo.
+</p>
+
+<ol>
+    <li>
+        <strong>Creador de Menús</strong>
+        <ul>
+            <li>Diagrama de flujo de usuario (ya lo hice en papel)</li>
+            <li>Crear un diagrama completo del esquema de la base de datos</li>
+            <li>Crear una app Rails 8 con Devise/Pundit</li>
+            <li>Escribir las rutas</li>
+            <li>Crear los modelos con <code>rails g model</code></li>
+            <li>Controladores: <code>menu</code>, <code>category</code>, <code>item</code></li>
+            <li>Hacer que las vistas se vean decentes</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Carrito de Compras</strong>
+        <ul>
+            <li>Encontrar una gema para esto e integrarla</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Entrega</strong>
+        <ul>
+            <li>Agregar un servicio de entrega externo</li>
+        </ul>
+    </li>
+</ol>
+
+<p>
+    Puede que notes que, mientras agregué muchos pasos para la primera parte, dejé la segunda y tercera
+    mayormente en blanco. Todavía necesito investigar cuál es el mejor enfoque para esas dos partes,
+    pero por ahora, creo que planificar hasta la creación del menú es suficiente.
+</p>
+
+<p>
+    Luego garabateé este diagrama de historia de usuario:
+    <img alt="diagrama de flujo de usuario" src="/img/devlog/menu_express/1/flow.jpg">
+    <em>(Está un poco apresurado, pero creo que se entiende en su mayoría.)</em>
+</p>
+
+<p>
+    ¡Y luego creé este diagrama de base de datos!
+    <img alt="diagrama de base de datos" src="/img/devlog/menu_express/1/db.png">
+</p>
+
+<p>
+    ¡Hacer todos estos pasos me ayuda a asegurar que sé lo que estoy haciendo, así que son importantes!
+</p>
+
+<p>
+    Entonces, y solo entonces, ¡me puse manos a la obra! Creé una nueva app Rails:
+</p>
+<pre><code>rails new menu_maker_delivery</code></pre>
+
+<p>
+    Luego seguí las guías de instalación de rspec (para pruebas), devise (para autenticación) y pundit (para autorización)
+    disponibles en GitHub. Después, usé los siguientes comandos:
+</p>
+<pre><code>rails g controller Menus index show edit new
+rails g controller Items
+rails g controller Categories
+rails g model Menu name:string user:references
+rails g model Category name:string menu:references
+rails g model Item name:string price:float description:text category:references
+</code></pre>
+
+<p>
+    También agregué estas rutas:
+</p>
+<pre><code>resources :menus do
+  resources :categories, only: %i[create update destroy] do
+    resources :items, only: %i[create update destroy]
+  end
+end
+</code></pre>
+
+<p>
+    Con eso, tenemos todo lo necesario para empezar a implementar nuestra lógica de negocio.
+    Mañana veremos cómo hacer exactamente eso e intentaremos implementar un carrito de compras.
+    ¡Nos vemos entonces!
+</p>

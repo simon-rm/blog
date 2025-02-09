@@ -1,0 +1,103 @@
+<h2>Day 1: Starting point</h2>
+
+<p>
+    Welcome everyone! I’m Simon RM, and this is my first ever blog! Starting from today, we (and by we I mean <em>I</em>)
+    will be building a Menu maker + Delivery PWA (Progressive Web App)!
+</p>
+<p>
+    So I’ve been wanting to start a new project for a while now, and I decided on this idea because it
+    sounds fun and challenging =)
+</p>
+<p>
+    Anyway, I will be using the latest version of Ruby on Rails (<strong>8.0.1</strong>) to build it.
+    Reason being I’ve been working as a Rails dev for a little more than a year as of early 2025, and,
+    second reason being Rails freaking rocks! So, let’s get started, shall we?
+</p>
+
+<p>
+    So today, after I decided on the idea, I talked with <code>chatgpt-4o</code> for a while to refine it
+    further, and really try to understand what I’m trying to achieve. What I ended up with is this:
+    “A Menu maker which lets you order online and also handles delivery.”
+    With that out of the way, I wrote down a course of action, a “step by step plan” of how to build this.
+</p>
+
+<ol>
+    <li>
+        <strong>Menu Creator</strong>
+        <ul>
+            <li>User flow diagram (I already did it on paper)</li>
+            <li>Create a complete database schema diagram</li>
+            <li>Create a Rails 8 app with Devise/Pundit</li>
+            <li>Write the routes</li>
+            <li>Create the models with <code>rails g model</code></li>
+            <li>Controllers: <code>menu</code>, <code>category</code>, <code>item</code></li>
+            <li>Make the views look decent</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Shopping Cart</strong>
+        <ul>
+            <li>Find a gem for this and integrate it</li>
+        </ul>
+    </li>
+    <li>
+        <strong>Delivery</strong>
+        <ul>
+            <li>Add an external delivery service</li>
+        </ul>
+    </li>
+</ol>
+
+<p>
+    You might notice that while I added many steps for the first part, I left the second and third part
+    mostly blank. I still need to investigate what the best approach for the second and third parts might be,
+    but for now, I think planning up to Menu creation will do.
+</p>
+
+<p>
+    Then I scribbled down this user story diagram:
+    <img alt="user flow diagram" src="/img/devlog/menu_express/1/flow.jpg">
+    <em>(It’s a bit hasty, but it should be understandable for the most part, I think.)</em>
+</p>
+
+<p>
+    And then I created this DB diagram!
+    <img alt="database diagram" src="/img/devlog/menu_express/1/db.png">
+</p>
+
+<p>
+    Doing all these steps helps assure I know what the hell I am doing, so they’re important!
+</p>
+
+<p>
+    So then and only then I got to work! I created a new Rails app:
+</p>
+<pre><code>rails new menu_maker_delivery</code></pre>
+
+<p>
+    Then I followed rspec (for tests), devise (for authentication) and pundit (for authorization) installation
+    guides available on github. Then I used the following commands:
+</p>
+<pre><code>rails g controller Menus index show edit new
+rails g controller Items
+rails g controller Categories
+rails g model Menu name:string user:references
+rails g model Category name:string menu:references
+rails g model Item name:string price:float description:text category:references
+</code></pre>
+
+<p>
+    I also added these routes:
+</p>
+<pre><code>resources :menus do
+  resources :categories, only: %i[create update destroy] do
+    resources :items, only: %i[create update destroy]
+  end
+end
+</code></pre>
+
+<p>
+    With that, we got all that’s required to actually start implementing our business logic.
+    Tomorrow, we’ll look into doing exactly that and take a shot at implementing a shopping cart!
+    See you then!
+</p>
