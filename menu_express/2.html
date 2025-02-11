@@ -1,0 +1,215 @@
+<h2> Day 2: Getting things going </h2>
+
+<p>Hi! Welcome to the second entry on our journey to make a menu maker + delivery! Let's jump right in, shall we?</p>
+
+<p>
+    So first things first, I realized routes could be simplified because I wanted to create a menu, its categories,
+    and items all on the same page.
+</p>
+
+<h3>Updating the Routes</h3>
+<p>I changed my routes from this:</p>
+<pre><code>
+resources :menus do
+  resources :categories, only: %i[create update destroy] do
+    resources :items, only: %i[create update destroy]
+  end
+end
+  </code></pre>
+
+<p>To this simpler version:</p>
+<pre><code>
+resources :menus
+  </code></pre>
+
+<h3>Using Simple Form and Cocoon</h3>
+<p>
+    Next, I added the
+    <a href="https://github.com/heartcombo/simple_form" target="_blank" rel="noopener noreferrer">simple_form gem</a>
+    (which makes forms simpler) and the
+    <a href="https://github.com/nathanvda/cocoon" target="_blank" rel="noopener noreferrer">cocoon gem</a>.
+    I actually hadn't used cocoon before! It gives you helpers like
+    <code>link_to_add_association</code> and <code>link_to_remove_association</code>, which are quite handy.
+</p>
+<p>Given these gems, building a menu creation form, with "categories" and "items," was pretty straightforward!</p>
+
+<h3>Menu Form Code</h3>
+<pre><code>
+&lt;%= simple_form_for(@menu) do |f| %&gt;
+  &lt;%= f.input :name %&gt;
+  &lt;h3&gt;Categories&lt;/h3&gt;
+  &lt;div id="categories"&gt;
+    &lt;%= f.simple_fields_for :categories do |category_form| %&gt;
+      &lt;%= render 'category_fields', f: category_form %&gt;
+    &lt;% end %&gt;
+    &lt;%= link_to_add_association 'Add Category', f, :categories %&gt;
+  &lt;/div&gt;
+  &lt;%= f.button :submit %&gt;
+&lt;% end %&gt;
+  </code></pre>
+
+<h3>Category Fields Partial</h3>
+<pre><code>
+&lt;div class="nested-fields"&gt;
+  &lt;%= f.input :name, label: "Category Name" %&gt;
+  &lt;%= link_to_remove_association "Remove Category", f %&gt;
+  &lt;h4&gt;Items&lt;/h4&gt;
+  &lt;%= f.simple_fields_for :items do |item_form| %&gt;
+    &lt;%= render 'item_fields', f: item_form %&gt;
+  &lt;% end %&gt;
+  &lt;div&gt;
+    &lt;%= link_to_add_association 'Add Item', f, :items %&gt;
+    &lt;hr&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+  </code></pre>
+
+<h3>Item Fields Partial</h3>
+<pre><code>
+&lt;div class="nested-fields"&gt;
+  &lt;%= f.input :name, label: "Item Name" %&gt;
+  &lt;%= f.input :description, label: "Item description" %&gt;
+  &lt;%= f.input :price, label: "Item Price" %&gt;
+  &lt;%= link_to_remove_association "Remove Item", f %&gt;
+&lt;/div&gt;
+  </code></pre>
+
+<p> Here's how it looks! </p>
+<img src="../img/devlog/menu_express/2/form.gif">
+<p>It looks awful, but it works!</p>
+
+<h3>Seeding the Database</h3>
+<p>
+    Before continuing, I decided it'd be a good idea to seed the database with placeholder data. So I added the
+    <a href="https://github.com/faker-ruby/faker" target="_blank" rel="noopener noreferrer">Faker gem</a>
+    with <code>bundle add faker</code> and did exactly that:
+</p>
+<pre><code>
+# Clear existing data
+Item.delete_all
+Category.delete_all
+Menu.delete_all
+User.delete_all
+
+# Create Users
+10.times do
+  user = User.create!(
+    email: Faker::Internet.unique.email,
+    password: 'password' # Assuming Devise or similar for authentication
+  )
+
+  # Create Menus for each User
+  rand(1..3).times do
+    menu = user.menus.create!(name: Faker::Restaurant.name)
+
+    # Create Categories for each Menu
+    rand(2..4).times do
+      category = menu.categories.create!(name: Faker::Restaurant.type)
+
+      # Create Items for each Category
+      rand(3..6).times do
+        category.items.create!(
+          name: Faker::Food.dish,
+          price: Faker::Commerce.price(range: 5.0..50.0),
+          description: Faker::Food.description
+        )
+      end
+    end
+  end
+end
+
+puts "Seeded #{User.count} users, #{Menu.count} menus, #{Category.count} categories, and #{Item.count} items."
+  </code></pre>
+
+<h3>Adding Some Quick Styles With Pico.css</h3>
+<p>
+    Then I was about to implement a shopping cart when I decided my eyeballs hurt, and I wanted to quickly style everything.
+    Now, I could've installed
+    <a href="https://getbootstrap.com/" target="_blank" rel="noopener noreferrer">Bootstrap</a> or
+    <a href="https://tailwindcss.com/" target="_blank" rel="noopener noreferrer">Tailwind</a>... but when it comes to sheer
+    unwillingness to code a single style, there's nothing like
+    <a href="https://picocss.com/" target="_blank" rel="noopener noreferrer">pico.css</a>!
+</p>
+<p>
+    It's a classless framework. And let me just say, for quick projects like these, it´s great. Everything looks great (for the most part)
+    right out of the box, and it comes with a few helper classes like <code>.container</code> and <code>.grid</code>.
+</p>
+
+<h3>Installing Pico.css with DartSass</h3>
+<ol>
+    <li><code>bundle add dartsass-rails</code></li>
+    <li><code>rails dartsass:install</code></li>
+    <li>For more info, see: <a href="https://propshaft-rails.com/sass" target="_blank" rel="noopener noreferrer">propshaft-rails.com/sass</a></li>
+</ol>
+<p>Then, I installed Pico:</p>
+<pre><code>yarn add @picocss/pico</code></pre>
+<p>And added this in my <code>assets/stylesheets/application.scss</code>:</p>
+<pre><code>
+@use "@picocss/pico/scss/pico" with (
+  $parent-selector: ".pico",
+  $theme-color: "violet"
+);
+  </code></pre>
+
+<h3>Custom Styles (BEM)</h3>
+<p>
+    I also added custom styles to the menu show page. I used
+    <a href="https://en.bem.info/methodology/" target="_blank" rel="noopener noreferrer">BEM</a>
+    because it's amazing. It allows you to actually give your rules a cohesive structure. It keeps you organized.
+    I mean, just look at this beauty:
+</p>
+<pre><code>
+.menu-wrapper {
+  background-color: hsl(0%, 0%, 98%);
+}
+.menu {
+  background-color: white;
+  color: hsl(0%, 0%, 10%);
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+
+  &__header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding-left: 10px;
+  }
+
+  &__category {
+    &-title {
+      text-align: center;
+      color: hsl(0%, 0%, 20%);
+      background-color: hsl(0%, 5%, 90%);
+      margin: 0;
+      padding: 10px;
+    }
+    background-color: hsl(0%,0%,98%);
+  }
+
+  &__item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+
+    &:nth-child(even) {
+      background-color: hsl(0%, 0%,95%);
+    }
+
+    &-description {
+      font-size: 0.75rem;
+    }
+  }
+}
+  </code></pre>
+
+<p>
+    By the way, here is how it currently looks! Not bad for day 2, eh?
+</p>
+
+<img class="vertical-img" src="../img/devlog/menu_express/2/current.gif">
+
+<p>
+    Anyway, I didn't get too far into the whole making a shopping cart thing... so tomorrow we'll look into that and
+    update the database schema accordingly. See you then!
+</p>

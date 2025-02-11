@@ -60,6 +60,12 @@ nav {
     display: none;
 }
 
+.vertical-img {
+    display: block;
+    margin: 20px auto;
+    width: 45%;
+}
+
 nav {
     position: sticky;
     top: 0;
