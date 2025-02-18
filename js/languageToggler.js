@@ -6,9 +6,6 @@ const toggleLanguage = () => {
 };
 
 window.addEventListener('DOMContentLoaded', () => {
-    if (localStorage.getItem('language') === undefined && navigator.language.startsWith('es')) {
-        localStorage.setItem('language', 'es');
-    }
     const language = localStorage.getItem('language');
 
     if (language === 'es') {

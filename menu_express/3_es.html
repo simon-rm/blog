@@ -1,0 +1,174 @@
+<h2> Día 3: Poniendo las cosas en orden </h2>
+
+<p>¡Bienvenido/a! Hoy continuaremos desarrollando "Menu Express".</p>
+<p>Dado que este es el tercer día, hagamos un pequeño repaso, ¿te parece?</p>
+
+<h3>Cosas que hemos logrado hasta ahora</h3>
+<ul>
+    <li>Creamos la siguiente base de datos: <img alt="diagrama de base de datos" src="/img/devlog/menu_express/1/db.png"></li>
+    <li>Llenamos la base de datos con datos falsos usando Faker</li>
+    <li>Implementamos el flujo de creación de menús</li>
+</ul>
+
+<h3>Hoy haremos lo siguiente:</h3>
+<ul>
+    <li>Agregar la funcionalidad de realizar pedidos (es decir, un carrito de compras) a los menús.</li>
+</ul>
+
+<h3>En los próximos días, trabajaremos en lo siguiente:</h3>
+<ul>
+    <li>Implementar pagos</li>
+    <li>Integrar un servicio externo de delivery</li>
+</ul>
+
+<p>¡Suena emocionante! Empecemos :)</p>
+
+<p>Primero necesitaremos crear un modelo Order para que nuestros usuarios puedan hacer pedidos de los artículos en nuestra aplicación:</p>
+<pre><code>rails g model orders status:integer user:references menu:references
+</code></pre>
+
+<p>Ahora bien, dado que las órdenes van a tener muchos artículos y los artículos van a pertenecer a muchas órdenes, significa que estamos lidiando con una relación de muchos a muchos. Esto a su vez implica que necesitaremos un modelo OrderItem. ¡Así que generémoslo!</p>
+<pre><code>rails g model order_items item:references order:references price:float quantity:integer
+</code></pre>
+
+<p>Ahora nuestro diagrama de base de datos se ve así:</p>
+<img src="/img/devlog/menu_express/3/db2.png">
+<p>Es bastante estándar, pero hay 2 cosas que quiero señalar. Los lectores con más experiencia quizás ya se hayan dado cuenta:</p>
+
+<ol>
+    <li><strong>¿Por qué almacenamos el 'price' una vez en la tabla items y otra vez en la tabla item_orders?</strong><br>
+        Esto se debe a que necesitamos guardar el precio que tenía el artículo en el momento de la compra. Si no hacemos eso, no podremos mostrar a nuestros usuarios un historial exacto de sus pedidos. También podríamos haber usado la gema PaperTrail para esto, pero en mi opinión añadiría complejidad innecesaria.
+    </li>
+    <li><strong>¿Por qué las órdenes tienen un 'menu_id'?</strong><br>
+        Por dos razones: 1. Es más eficiente y 2. Permite simplificar el código. No incluir esta asociación también habría estado perfectamente bien, (aunque si la eficiencia se volviera una preocupación real, la habríamos agregado de todos modos).
+    </li>
+</ol>
+
+<h5>Bien, una pregunta rápida.</h5>
+<p>Para manejar la lógica de nuestro carrito de compras (es decir, agregar/eliminar artículos de nuestras órdenes), ¿deberíamos usar un <strong>OrdersController</strong> o un <strong>OrderItemsController</strong>?</p>
+<p>La respuesta correcta es un <strong>OrderItemsController</strong>. La razón es que “Order item” es la entidad central en el flujo del carrito de compras. Esto también nos permite basarnos en las funciones de recarga en vivo de Turbo 8 (es decir, morphing, actualizaciones sin perder la posición de scroll, etc.).</p>
+
+<p>Agreguemos algunas rutas:</p>
+<pre><code>resources :orders, only: :edit
+resources :order_items, only: [:create, :update, :destroy]
+</code></pre>
+
+<p>Nuestra lógica de order_items consistirá en tres acciones:</p>
+<ul>
+    <li>Create: para crear artículos de una orden</li>
+    <li>Update: para actualizar la columna quantity de los artículos de una orden</li>
+    <li>Destroy: para eliminar artículos de la orden</li>
+</ul>
+
+<p>También agregué un edit de la orden, en el cual mostraremos al usuario la lista de los artículos seleccionados. Podría haber sido también un index de order_items. La idea es la misma en cualquier caso.</p>
+
+<p>Primero crearemos un partial en <code>shared/_item_adder.html.erb</code>:</p>
+<pre><code>&lt;% order_item ||= OrderItem.new(item:, quantity: 0) %&gt;
+&lt;div class="menu__item-adder-wrapper"&gt;
+  &lt;div class="menu__item-adder"&gt;
+    &lt;% if order_item.persisted? %&gt;
+      &lt;% if order_item.quantity == 1 %&gt;
+        &lt;%= button_to order_item, method: :delete do %&gt;
+          &lt;i class="fa fa-trash"&gt;&lt;/i&gt;
+        &lt;% end %&gt;
+      &lt;% else %&gt;
+        &lt;%= button_to order_item, params: { order_item: {  item_id: order_item.item_id, quantity: order_item.quantity - 1 } },
+                      onclick: "setTimeout(() =&gt; this.removeAttribute('disabled'), 0);" do %&gt;
+          &lt;i class="fa fa-minus"&gt;&lt;/i&gt;
+        &lt;% end %&gt;
+      &lt;% end %&gt;
+      &lt;div class="menu__item-quantity"&gt;
+        &lt;%= order_item.quantity %&gt;
+      &lt;/div&gt;
+    &lt;% end %&gt;
+    &lt;%= button_to order_item, params: { order_item: {  item_id: order_item.item_id, quantity: (order_item.quantity || 0) + 1 } },
+                  onclick: "setTimeout(() =&gt; this.removeAttribute('disabled'), 0);" do %&gt;
+      &lt;i class="fa fa-plus"&gt;&lt;/i&gt;
+    &lt;% end %&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+
+<p>Ahora echemos un vistazo a la acción create:</p>
+<pre><code>def create
+  item = Item.find(order_item_params[:item_id])
+  order = current_user.orders.pending.find_or_create_by(menu: item.menu)
+  order.order_items.create!(**order_item_params, price: item.price)
+  redirect_back_or_to :root
+end
+</code></pre>
+
+<p>¿Bastante simple, cierto?</p>
+<ol>
+    <li>Obtenemos el artículo</li>
+    <li>Obtenemos o creamos la orden</li>
+    <li>Creemos el order item</li>
+    <li>Hacemos redirect</li>
+</ol>
+
+<p>La acción update es aún más sencilla:</p>
+<pre><code>def update
+  @order_item.update(order_item_params)
+  redirect_back_or_to :root
+end
+</code></pre>
+
+<p>Y la acción destroy es un poco más interesante, ya que redirige al menú si estás borrando el último artículo de la orden:</p>
+<pre><code>def destroy
+  order = @order_item.order
+  if order.items.one?
+    order.destroy
+    redirect_to @order_item.menu
+  else
+    @order_item.destroy
+    redirect_back_or_to :root
+  end
+end
+</code></pre>
+
+<p>¡Genial!</p>
+
+<h3>Order Edit</h3>
+<p>También crearemos el edit de la orden ahora que estamos en ello:</p>
+<pre><code class="language-html">&lt;%# esta línea es súper importante! Le dice a Rails que evite un refresco de página completo y preserve el scroll, haciendo que la página se sienta como una SPA. %&gt;
+
+&lt;%= turbo_refreshes_with method: :morph, scroll: :preserve %&gt;
+&lt;div class="menu-wrapper"&gt;
+  &lt;div class="order"&gt;
+    &lt;% @order_items.each do |order_item| %&gt;
+      &lt;% item = order_item.item %&gt;
+      &lt;div class="order__item"&gt;
+        &lt;div&gt;
+          &lt;%= item.name %&gt;
+          &lt;div class="order__item-description"&gt;
+            &lt;%= item.description %&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="order__item-adder-interface"&gt;
+          &lt;div&gt;
+            &lt;%= number_to_currency order_item.price %&gt;
+          &lt;/div&gt;
+          &lt;%= render "shared/item_adder", order_item: %&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;% end %&gt;
+  &lt;/div&gt;
+  &lt;div class="order__footer-wrapper"&gt;
+    &lt;div class="order__footer"&gt;
+      &lt;span&gt;Total: &lt;%= number_to_currency @total_price %&gt; &lt;/span&gt;
+      &lt;%= link_to "#" do %&gt;
+        &lt;button class="btn-primary btn-checkout"&gt;
+          Proceder al pago
+        &lt;/button&gt;
+      &lt;% end %&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+
+<p>¡Perfecto! Aquí está el resultado final:</p>
+
+<img class="vertical-img" src="../img/devlog/menu_express/3/result.gif">
+
+<p>¡Eso es todo! Siempre puedes seguir el progreso en el repositorio de GitHub.</p>
+<p>¡La próxima vez implementaremos pagos reales! ¡No te lo pierdas!</p>

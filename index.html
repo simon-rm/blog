@@ -11,6 +11,15 @@
         <script src="js/languageToggler.js"></script>
         <script src="js/mainLoader.js"></script>
         <script defer src="js/themeTogglers.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    hljs.highlightAll();
+                }, 100);
+            });
+        </script>
     </head>
     <body>
         <div>
@@ -44,5 +53,6 @@
             <p> Feel free to contact me if you want to work with me </p>
             <p> Email: simonrmurcia@gmail.com </p>
         </footer>
+        <script>hljs.highlightAll();</script>
     </body>
 </html>
