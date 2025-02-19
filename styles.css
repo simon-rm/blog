@@ -5,6 +5,10 @@ body, html {
     justify-content: space-between;
 }
 
+a {
+    text-decoration: none;
+}
+
 #main-ruby {
     display: block;
     margin: 100px auto;
